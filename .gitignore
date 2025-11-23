@@ -6,6 +6,9 @@ mvnw
 mvnw.cmd
 .mvn/
 
+**/application-secret-dev.yml
+**/application-secret-prod.yml
+
 HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar

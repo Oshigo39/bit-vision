@@ -1,54 +1,54 @@
-# 公共配置文件
+# SpringBoot公共配置文件
 spring:
   application:
     name: bit-vision
   # 默认 dev 环境
   profiles:
     active: dev
+  # 外部私密配置的导入
+  config:
+    import: classpath:application-secret-${spring.profiles.active}.yml
   # 支持 swagger3
   mvc:
     path match:
       matching-strategy: ant_path_matcher
-  # session 配置
-  session:
-    # todo 取消注释开启分布式 session（须先配置 Redis）
-    # store-type: redis
-    # 30 天过期
-    timeout: 2592000
+  # 时间戳及时区设置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
   # 数据库配置
-  # todo 需替换配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3309/bit-vision
-    username: root
-    password: root_oshigo
+    url: jdbc:mysql://${ds.host}/${ds.db}?serverTimezone=GMT%2B8
+    username: ${ds.username:root}
+    password: ${ds.password:root}
+  # 邮箱服务器设置
+  mail:
+    host: smtp.qq.com   # QQ的smtp服务器地址
+    port: 465   # SSL协议端口
+    username: ${mail.username:}
+    password: ${mail.password:}
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true    # 开启SSL加密
   # Redis 配置
-  # todo 需替换配置，然后取消注释
-#  redis:
-#    database: 1
-#    host: localhost
-#    port: 6379
-#    timeout: 5000
-#    password: 123456
-
+  redis:
+    database: 0
+    host: ${redis.host:localhost}
+    port: ${redis.port:6379}
+    password: ${redis.password:}
   # 文件上传
   servlet:
     multipart:
-      # 大小限制
       max-file-size: 50MB
       max-request-size: 50MB
-server:
-  address: 0.0.0.0
-  port: 8101
-  servlet:
-    context-path: /api
-    # cookie 30 天过期
-    session:
-      cookie:
-        max-age: 2592000
+
 mybatis-plus:
   configuration:
-    map-underscore-to-camel-case: false
+    # 驼峰转下划线
+    map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
@@ -56,23 +56,26 @@ mybatis-plus:
       logic-delete-value: 1 # 逻辑已删除值（默认为 1）
       logic-not-delete-value: 0 # 逻辑未删除值（默认为 0）
 
-# 对象存储
-# MinIO配置 TODO 需要更改配置
+# MinIO对象存储配置
 minio:
-  readPath: http://192.168.100.151:9000       # Minio的文件读取地址，这个错了的话会导致访问错误
-  endpoint: http://192.168.100.151:9000       # MinIO服务端点地址
-  accessKey: minioadmin       # 访问密钥
-  secretKey: minioadmin       # 密钥
-  bucket: avatar-bucket       # 存储桶名称（需提前在MinIO创建）
+  readPath: ${Minio_ReadPath}
+  endpoint: ${Minio_Endpoint}
+  accessKey: ${Minio_AccessKey}
+  secretKey: ${Minio_SecretKey}
+  bucket: ${Minio_Bucket}
 
 # 接口文档配置
 knife4j:
   enable: true
   openapi:
-    title: "接口文档"
+    title: "BitVision Interface Doc"
     version: 1.0
     group:
       default:
         api-rule: package
         api-rule-resources:
           - com.chiho.bitvision.controller
+
+# Web Server配置
+server:
+  port: ${server.port}
