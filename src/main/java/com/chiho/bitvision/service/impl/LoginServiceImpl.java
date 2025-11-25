@@ -1,7 +1,10 @@
 package com.chiho.bitvision.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.chiho.bitvision.constant.RedisConstant;
 import com.chiho.bitvision.entity.Captcha;
+import com.chiho.bitvision.entity.user.User;
+import com.chiho.bitvision.entity.vo.FindPWVO;
 import com.chiho.bitvision.entity.vo.RegisterVO;
 import com.chiho.bitvision.exception.BaseException;
 import com.chiho.bitvision.service.CaptchaService;
@@ -13,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 import org.springframework.util.ObjectUtils;
 
 import javax.imageio.ImageIO;
@@ -25,6 +29,9 @@ import java.io.IOException;
 public class LoginServiceImpl implements LoginService {
 
     private static final Logger log = LoggerFactory.getLogger(LoginServiceImpl.class);
+
+    private static final String SALT = "oshigo39";
+
     @Autowired
     private UserService userService;
 
@@ -73,5 +80,40 @@ public class LoginServiceImpl implements LoginService {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public User login(User user) {
+        // 保存用户输入的原始密码和邮箱
+        final String inputPassword = user.getPassword();
+        final String inputEmail = user.getEmail();
+
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        // 根据邮箱查询用户信息，使用不同的变量接收
+        User dbUser = userService.getOne(wrapper.eq(User::getEmail, inputEmail));
+
+        if (ObjectUtils.isEmpty(dbUser)){
+            throw new BaseException("没有该账号");
+        }
+
+        // 调试日志
+        log.info("输入密码: {}", inputPassword);
+        String encryptPassword = DigestUtils.md5DigestAsHex((SALT + inputPassword).getBytes());
+        log.info("加密后的密码: {}", encryptPassword);
+        log.info("数据库中的密码: {}", dbUser.getPassword());
+
+        // 正确比较：加密后的输入密码 vs 数据库中的加密密码
+        if (!encryptPassword.equals(dbUser.getPassword())){
+            throw new BaseException("密码错误");
+        }
+
+        // 脱敏操作
+        dbUser.setPassword(null);
+        return dbUser;
+    }
+
+    @Override
+    public Boolean findPassword(FindPWVO findPWVO) {
+        return userService.findPassword(findPWVO);
     }
 }

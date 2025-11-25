@@ -2,10 +2,12 @@ package com.chiho.bitvision.service.user.impl;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.chiho.bitvision.constant.RedisConstant;
 import com.chiho.bitvision.entity.user.Favorites;
 import com.chiho.bitvision.entity.user.User;
+import com.chiho.bitvision.entity.vo.FindPWVO;
 import com.chiho.bitvision.entity.vo.RegisterVO;
 import com.chiho.bitvision.exception.BaseException;
 import com.chiho.bitvision.mapper.user.UserMapper;
@@ -14,10 +16,12 @@ import com.chiho.bitvision.service.user.UserService;
 import com.chiho.bitvision.util.RedisCacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
+    private static final String SALT = "oshigo39";
 
     @Autowired
     private RedisCacheUtil redisCacheUtil;
@@ -51,8 +55,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setNickName(registerVO.getNickName());
         user.setEmail(registerVO.getEmail());
         user.setDescription("这个人很懒...");
-        // todo 密码加密
-        user.setPassword(registerVO.getPassword());
+        // 密码加密
+        String encryptPassword = DigestUtils.md5DigestAsHex(
+                (SALT + registerVO.getPassword()).getBytes()
+        );
+        user.setPassword(encryptPassword);
         save(user);
 
         // 创建默认收藏夹并存进数据库
@@ -64,6 +71,33 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 这里如果单独抽出一个用户配置表就好了,但是没有必要再搞个表
         user.setDefaultFavoritesId(favorites.getId());
         updateById(user);
+        return true;
+    }
+
+    /**
+     * 找回密码
+     * @param findPWVO 找回密码VO
+     * @return ?
+     */
+    @Override
+    public Boolean findPassword(FindPWVO findPWVO) {
+        final Object o = redisCacheUtil.get(RedisConstant.EMAIL_CODE + findPWVO.getEmail());
+        if (o == null) return false;
+        // 校验邮箱验证码（对象o转换成字符串后再parseInt()成int类型）
+        if (Integer.parseInt(o.toString())
+                != findPWVO.getCode()) return false;
+        // 修改
+        final User user = new User();
+        user.setEmail(findPWVO.getEmail());
+        // 密码加密
+        String encryptPassword = DigestUtils.md5DigestAsHex(
+                (SALT + findPWVO.getNewPassword()).getBytes()
+        );
+        user.setPassword(encryptPassword);
+        update(user,new UpdateWrapper<User>()
+                .lambda()
+                .set(User::getPassword,encryptPassword)
+                .eq(User::getEmail,findPWVO.getEmail()));
         return true;
     }
 }

@@ -1,6 +1,8 @@
 package com.chiho.bitvision.service;
 
 import com.chiho.bitvision.entity.Captcha;
+import com.chiho.bitvision.entity.user.User;
+import com.chiho.bitvision.entity.vo.FindPWVO;
 import com.chiho.bitvision.entity.vo.RegisterVO;
 
 import javax.servlet.http.HttpServletResponse;
@@ -39,5 +41,20 @@ public interface LoginService {
      * @throws Exception e
      */
     Boolean register(RegisterVO registerVO) throws Exception;
+
+    /**
+     * 用户登录
+     * @param user user
+     * @return User
+     */
+    User login(User user);
+
+    /**
+     * 找回密码
+     * @param findPWVO 找回密码VO模型
+     * @return ?
+     */
+    Boolean findPassword(FindPWVO findPWVO);
+
 
 }
