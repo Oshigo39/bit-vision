@@ -96,6 +96,7 @@ public class LoginServiceImpl implements LoginService {
             throw new BaseException("没有该账号");
         }
 
+        // todo 后续可以使用安全性更高的加密方式
         // 调试日志
         log.info("输入密码: {}", inputPassword);
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + inputPassword).getBytes());

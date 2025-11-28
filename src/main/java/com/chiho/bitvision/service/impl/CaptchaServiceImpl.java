@@ -65,8 +65,7 @@ public class CaptchaServiceImpl extends ServiceImpl<CaptchaMapper, Captcha> impl
         // 无论是否验证成功，立即从数据库中移除该验证码记录（一次性使用 原则，提高安全性）
         this.remove(new LambdaQueryWrapper<Captcha>().eq(Captcha::getUuid, captcha.getUuid()));
 
-        if (!captcha.getCode().equals(code1)){
-            throw new BaseException("CODE不匹配");
+        if (!captcha.getCode().equals(code1)){            throw new BaseException("CODE不匹配");
         }
         if(captcha.getExpireTime().getTime()<=System.currentTimeMillis()){
             throw new BaseException("UUID已过期");
@@ -82,7 +81,7 @@ public class CaptchaServiceImpl extends ServiceImpl<CaptchaMapper, Captcha> impl
 
     /**
      * 生成6位随机数验证码的方法
-     * @return 随机验证码
+     * @return 随机邮箱验证码
      */
     public static String getSixCode(){
         StringBuilder builder = new StringBuilder();
