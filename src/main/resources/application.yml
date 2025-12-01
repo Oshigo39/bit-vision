@@ -56,7 +56,7 @@ mybatis-plus:
       logic-delete-value: 1 # 逻辑已删除值（默认为 1）
       logic-not-delete-value: 0 # 逻辑未删除值（默认为 0）
 
-# MinIO对象存储配置
+# MinIO对象存储配置（需要自建服务器的话开启）
 minio:
   readPath: ${Minio_ReadPath}
   endpoint: ${Minio_Endpoint}
@@ -79,3 +79,10 @@ knife4j:
 # Web Server配置
 server:
   port: ${server.port}
+
+# 七牛云对象存储配置
+qiniu:
+  kodo:
+    access-key: ${Qiniu_Kodo_Access}
+    secret-key: ${Qiniu_Kodo_Secret}
+    bucket-name: ${Qiniu_Kodo_Bucket}
