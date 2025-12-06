@@ -39,11 +39,7 @@ public class FileController implements InitializingBean {
         }
     }
 
-    /**
-     * 保存文件元数据到数据库
-     * @param fileKey key
-     * @return data
-     */
+    // 保存文件元数据到数据库
     @PostMapping
     public R save(String fileKey){
         return R.ok().data(fileService.save(fileKey, UserHolder.get()));

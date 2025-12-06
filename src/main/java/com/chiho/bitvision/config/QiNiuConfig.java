@@ -45,7 +45,7 @@ public class QiNiuConfig {
         );
     }
 
-    // 生成API请求token
+    // 生成API请求的token
     public String getToken(String url, String method, String body, String contentType) {
         final Auth auth = buildAuth();
         return "Qiniu " + auth.signQiniuAuthorization(
