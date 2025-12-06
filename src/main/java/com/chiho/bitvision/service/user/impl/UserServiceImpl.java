@@ -13,10 +13,13 @@ import com.chiho.bitvision.exception.BaseException;
 import com.chiho.bitvision.mapper.user.UserMapper;
 import com.chiho.bitvision.service.user.FavoritesService;
 import com.chiho.bitvision.service.user.UserService;
+import com.chiho.bitvision.util.DateUtil;
 import com.chiho.bitvision.util.RedisCacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+
+import java.util.Date;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -60,6 +63,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 (SALT + registerVO.getPassword()).getBytes()
         );
         user.setPassword(encryptPassword);
+        user.setGmtCreated(new Date());
         save(user);
 
         // 创建默认收藏夹并存进数据库
@@ -97,6 +101,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         update(user,new UpdateWrapper<User>()
                 .lambda()
                 .set(User::getPassword,encryptPassword)
+                .set(User::getGmtUpdated,new Date())
                 .eq(User::getEmail,findPWVO.getEmail()));
         return true;
     }
