@@ -4,22 +4,34 @@ package com.chiho.bitvision.service.user.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.chiho.bitvision.constant.AuditStatus;
 import com.chiho.bitvision.constant.RedisConstant;
+import com.chiho.bitvision.entity.response.AuditResponse;
 import com.chiho.bitvision.entity.user.Favorites;
 import com.chiho.bitvision.entity.user.User;
 import com.chiho.bitvision.entity.vo.FindPWVO;
 import com.chiho.bitvision.entity.vo.RegisterVO;
+import com.chiho.bitvision.entity.vo.UpdateUserVO;
+import com.chiho.bitvision.entity.vo.UserVO;
 import com.chiho.bitvision.exception.BaseException;
+import com.chiho.bitvision.holder.UserHolder;
 import com.chiho.bitvision.mapper.user.UserMapper;
+import com.chiho.bitvision.service.FileService;
+import com.chiho.bitvision.service.audit.ImageAuditService;
+import com.chiho.bitvision.service.audit.TextAuditService;
 import com.chiho.bitvision.service.user.FavoritesService;
+import com.chiho.bitvision.service.user.FollowService;
 import com.chiho.bitvision.service.user.UserService;
 import com.chiho.bitvision.util.DateUtil;
 import com.chiho.bitvision.util.RedisCacheUtil;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+import org.springframework.util.ObjectUtils;
 
 import java.util.Date;
+import java.util.Objects;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -32,12 +44,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Autowired
     private FavoritesService favoritesService;
 
-    /**
-     * 注册
-     * @param registerVO 注册VO模型
-     * @return ?
-     * @throws Exception e
-     */
+    @Autowired
+    private FollowService followService;
+
+    @Autowired
+    private FileService fileService;
+
+    @Autowired
+    private TextAuditService textAuditService;
+
+    @Autowired
+    private ImageAuditService imageAuditService;
+
+    // 注册
     @Override
     public boolean register(RegisterVO registerVO) throws Exception {
         // 邮箱是否存在
@@ -78,11 +97,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return true;
     }
 
-    /**
-     * 找回密码
-     * @param findPWVO 找回密码VO
-     * @return ?
-     */
+    // 找回密码
     @Override
     public Boolean findPassword(FindPWVO findPWVO) {
         final Object o = redisCacheUtil.get(RedisConstant.EMAIL_CODE + findPWVO.getEmail());
@@ -104,5 +119,65 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .set(User::getGmtUpdated,new Date())
                 .eq(User::getEmail,findPWVO.getEmail()));
         return true;
+    }
+
+    // 获取指定用户的个人信息
+    @Override
+    public UserVO getInfo(Long userId) {
+        final User user = getById(userId);
+        if (ObjectUtils.isEmpty(user)) {
+            // 用户不存在，返回空对象，而不是异常
+            return new UserVO();
+        }
+        final UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user,userVO);
+        // 查出当前用户关注的数量
+        final long followCount = followService.getFollowCount(userId);
+
+        // 获取粉丝数量
+        final long fansCount = followService.getFansCount(userId);
+        userVO.setFollow(followCount);
+        userVO.setFans(fansCount);
+        return userVO;
+    }
+
+    // 更新用户资料
+    @Override
+    public void updateUser(UpdateUserVO userVO) {
+        final Long userId = UserHolder.get();
+        final User oldUser = getById(userId);
+
+        // 审核（昵称、描述、头像等是否违规）
+        if (!oldUser.getNickName().equals(userVO.getNickName())){
+            oldUser.setNickName(userVO.getNickName());
+            AuditResponse audit = textAuditService.audit(userVO.getNickName());
+            // 检查昵称是否审核成功
+            if (!Objects.equals(audit.getAuditStatus(), AuditStatus.SUCCESS)){
+                throw new BaseException(audit.getMsg());
+            }
+        }
+        if (!ObjectUtils.isEmpty(userVO.getDescription()) && !oldUser.getDescription().equals(userVO.getDescription())){
+            oldUser.setDescription(userVO.getDescription());
+            AuditResponse audit = textAuditService.audit(userVO.getDescription());
+            if (!Objects.equals(audit.getAuditStatus(), AuditStatus.SUCCESS)) {
+                throw new BaseException(audit.getMsg());
+            }
+        }
+        if (!Objects.equals(userVO.getAvatar(),oldUser.getAvatar())){
+            final AuditResponse audit = imageAuditService.audit(fileService.getById(userVO.getAvatar()).getFileKey());
+            if (!Objects.equals(audit.getAuditStatus(), AuditStatus.SUCCESS)) {
+                throw new BaseException(audit.getMsg());
+            }
+            oldUser.setAvatar(userVO.getAvatar());
+        }
+
+        if (!ObjectUtils.isEmpty(userVO.getDefaultFavoritesId())){
+            // 校验默认收藏夹是否为空
+            favoritesService.exist(userId,userVO.getDefaultFavoritesId());
+        }
+
+        oldUser.setSex(userVO.getSex());
+        oldUser.setDefaultFavoritesId(userVO.getDefaultFavoritesId());
+        updateById(oldUser);
     }
 }

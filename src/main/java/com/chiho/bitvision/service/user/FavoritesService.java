@@ -8,4 +8,10 @@ import com.chiho.bitvision.entity.user.Favorites;
  */
 public interface FavoritesService extends IService<Favorites> {
 
+    /**
+     * 校验用户的默认收藏夹是否存在
+     * @param userId 用户id
+     * @param defaultFavoritesId 默认收藏夹ID
+     */
+    void exist(Long userId, Long defaultFavoritesId);
 }
