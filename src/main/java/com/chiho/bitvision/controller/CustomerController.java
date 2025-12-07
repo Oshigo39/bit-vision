@@ -30,6 +30,7 @@ public class CustomerController {
 
     /**
      * 获取指定用户的个人信息
+     * todo 或许应该移到IndexController当中，让没有登录也能在主页看到信息
      * @param userId userid
      * @return data
      */
@@ -55,6 +56,8 @@ public class CustomerController {
      */
     @PutMapping
     public R updateUser(@RequestBody @Validated UpdateUserVO userVO){
+        // 获取当前的userId
+        userVO.setUserId(UserHolder.get());
         userService.updateUser(userVO);
         return R.ok().message("修改成功");
     }

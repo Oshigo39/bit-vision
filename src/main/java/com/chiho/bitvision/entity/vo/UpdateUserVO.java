@@ -10,6 +10,9 @@ import javax.validation.constraints.NotBlank;
 @Data
 public class UpdateUserVO {
 
+    // 分布式系统需要用到这个userId
+    private Long userId;
+
     @NotBlank(message = "昵称不可为空")
     private String nickName;
 

@@ -144,7 +144,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     // 更新用户资料
     @Override
     public void updateUser(UpdateUserVO userVO) {
-        final Long userId = UserHolder.get();
+        final Long userId = userVO.getUserId();
         final User oldUser = getById(userId);
 
         // 审核（昵称、描述、头像等是否违规）
