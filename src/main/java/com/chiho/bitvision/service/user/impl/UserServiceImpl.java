@@ -30,7 +30,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.ObjectUtils;
 
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -179,5 +181,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         oldUser.setSex(userVO.getSex());
         oldUser.setDefaultFavoritesId(userVO.getDefaultFavoritesId());
         updateById(oldUser);
+    }
+
+    /**
+     * SELECT id, nick_name, sex, avatar, description
+     * FROM user
+     * WHERE id IN ( ?, ?, ?, ... )
+     */
+    @Override
+    public List<User> list(Collection<Long> userIds) {
+        // 高效地批量查询用户信息
+        return list(new LambdaQueryWrapper<User>().in(User::getId,userIds)
+                .select(User::getId,User::getNickName,User::getSex,User::getAvatar,User::getDescription));
     }
 }

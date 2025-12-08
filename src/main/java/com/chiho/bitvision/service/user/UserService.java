@@ -7,6 +7,9 @@ import com.chiho.bitvision.entity.vo.RegisterVO;
 import com.chiho.bitvision.entity.vo.UpdateUserVO;
 import com.chiho.bitvision.entity.vo.UserVO;
 
+import java.util.Collection;
+import java.util.List;
+
 public interface UserService extends IService<User> {
     /**
      * 注册
@@ -38,4 +41,11 @@ public interface UserService extends IService<User> {
      * @param userVO userVO
      */
     void updateUser(UpdateUserVO userVO);
+
+    /**
+     * 批量获取用户基本信息
+     * @param userIds user's ids
+     * @return list data with user
+     */
+    List<User> list(Collection<Long> userIds);
 }
