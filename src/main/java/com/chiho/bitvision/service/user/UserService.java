@@ -48,4 +48,12 @@ public interface UserService extends IService<User> {
      * @return list data with user
      */
     List<User> list(Collection<Long> userIds);
+
+    /**
+     * 关注/取关
+     * @param followsUserId 对方ID
+     * @param userId 自己ID
+     * @return ?
+     */
+    boolean follows(Long followsUserId,Long userId);
 }

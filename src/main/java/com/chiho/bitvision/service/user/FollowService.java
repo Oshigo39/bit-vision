@@ -18,4 +18,12 @@ public interface FollowService extends IService<Follow> {
      * @return number
      */
     long getFansCount(Long userId);
+
+    /**
+     * 关注/取关
+     * @param followsUserId 对方ID
+     * @param userId 自己ID
+     * @return ?
+     */
+    boolean follows(Long followsUserId, Long userId);
 }

@@ -194,4 +194,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return list(new LambdaQueryWrapper<User>().in(User::getId,userIds)
                 .select(User::getId,User::getNickName,User::getSex,User::getAvatar,User::getDescription));
     }
+
+    // 关注/取关
+    @Override
+    public boolean follows(Long followsUserId,Long userId) {
+        return followService.follows(followsUserId,userId);
+    }
 }

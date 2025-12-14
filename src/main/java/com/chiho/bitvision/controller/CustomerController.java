@@ -70,4 +70,16 @@ public class CustomerController {
     public R avatarToken(){
         return R.ok().data(qiNiuConfig.imageUploadToken());
     }
+
+    /**
+     * 关注/取关
+     * @param followsUserId 前端传进来的目标ID
+     * @return msg
+     */
+    @PostMapping("/follows")
+    public R follows(@RequestParam Long followsUserId){
+        Long userId = UserHolder.get();
+        return R.ok().message(userService.follows(followsUserId,userId) ? "已关注" : "已取关");
+    }
+
 }
