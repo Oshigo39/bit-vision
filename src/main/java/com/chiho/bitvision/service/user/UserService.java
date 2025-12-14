@@ -1,11 +1,9 @@
 package com.chiho.bitvision.service.user;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.chiho.bitvision.entity.user.User;
-import com.chiho.bitvision.entity.vo.FindPWVO;
-import com.chiho.bitvision.entity.vo.RegisterVO;
-import com.chiho.bitvision.entity.vo.UpdateUserVO;
-import com.chiho.bitvision.entity.vo.UserVO;
+import com.chiho.bitvision.entity.vo.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -56,4 +54,20 @@ public interface UserService extends IService<User> {
      * @return ?
      */
     boolean follows(Long followsUserId,Long userId);
+
+    /**
+     * 获取关注
+     * @param basePage page of followed user
+     * @param userId current user id
+     * @return user's page data
+     */
+    Page<User> getFollows(BasePage basePage, Long userId);
+
+    /**
+     * 获取粉丝
+     * @param userId userId
+     * @param basePage base page
+     * @return data
+     */
+    Page<User> getFans(Long userId, BasePage basePage);
 }

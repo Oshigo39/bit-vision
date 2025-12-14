@@ -4,9 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service(value = "redisCacheUtil")
@@ -73,6 +75,48 @@ public class RedisCacheUtil {
             }else {
                 redisTemplate.delete(Arrays.asList(key));
             }
+        }
+    }
+
+    /**
+     * 操作Redis有序集合ZSet的工具方法；
+     * 获取Redis有序集合中所有元素，并按分数降序排列；
+     * 有序集合：
+     * - 每个元素都关联一个double类型的分数(score)；
+     * - 支持按分数进行排序和范围查询；
+     * - 适用于需要排序的场景，如排行榜、时间线等；
+     * @param key key
+     * @return obj
+     */
+    public Set<Object> zGet(String key) {
+        // 0，-1表示获取所有元素，reverseRange按照分数降序返回
+        return redisTemplate.opsForZSet().reverseRange(key,0,-1);
+    }
+
+    /**
+     * 实现Redis有序集合(ZSet)分页查询
+     * @param key 分页查询对象
+     * @param pageNum page number
+     * @param pageSize page size
+     * @return obj
+     */
+    public Set<ZSetOperations.TypedTuple<Object>> zSetGetByPage(String key, long pageNum, long pageSize) {
+        try {
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
+                long start = (pageNum - 1) * pageSize;  // 计算开始索引
+                long end = pageNum * pageSize - 1;  // 计算结算书索引
+                Long size = redisTemplate.opsForZSet().size(key);
+                if (end > size) {   // 处理边界问题
+                    end = -1;   // -1表示到集合末尾
+                }
+                // 按分数降序获取指定范围的元素及分数
+                return redisTemplate.opsForZSet().reverseRangeWithScores(key,start,end);
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            log.error("分页获取数据失败：{}",e.getMessage());
+            return null;
         }
     }
 }

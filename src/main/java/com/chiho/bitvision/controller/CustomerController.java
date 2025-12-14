@@ -1,12 +1,14 @@
 package com.chiho.bitvision.controller;
 
 import com.chiho.bitvision.config.QiNiuConfig;
+import com.chiho.bitvision.entity.vo.BasePage;
 import com.chiho.bitvision.entity.vo.UpdateUserVO;
 import com.chiho.bitvision.holder.UserHolder;
 import com.chiho.bitvision.service.user.FavoritesService;
 import com.chiho.bitvision.service.user.UserService;
 import com.chiho.bitvision.util.R;
 import lombok.extern.slf4j.Slf4j;
+import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -82,4 +84,25 @@ public class CustomerController {
         return R.ok().message(userService.follows(followsUserId,userId) ? "已关注" : "已取关");
     }
 
+    /**
+     * 获取关注者
+     * @param basePage page分页
+     * @param userId userId
+     * @return data
+     */
+    @GetMapping("/follows")
+    public R getFollows(BasePage basePage, Long userId){
+        return R.ok().data(userService.getFollows(basePage,userId));
+    }
+
+    /**
+     * 获取粉丝
+     * @param basePage page
+     * @param userId userId
+     * @return data
+     */
+    @GetMapping("/fans")
+    public R getFans(BasePage basePage, Long userId){
+        return R.ok().data(userService.getFans(userId,basePage));
+    }
 }
