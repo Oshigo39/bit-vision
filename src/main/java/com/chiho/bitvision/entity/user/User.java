@@ -42,6 +42,7 @@ public class User extends BaseEntity {
 
     /**
      * 非数据库字段，仅提供给临时业务使用，不参与CRUD
+     * 判断是否相互关注的逻辑字段
      */
     @TableField(exist = false)
     private Boolean each;
