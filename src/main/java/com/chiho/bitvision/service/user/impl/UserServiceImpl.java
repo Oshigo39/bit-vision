@@ -208,13 +208,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 获取粉丝列表
         // 这里需要将数据转换，因为存到redis中数值小是用int保存，取出来需要用long比较
         final HashSet<Long> fans = new HashSet<>(followService.getFans(userId, null));
+        // 构建关注关系映射map
         Map<Long,Boolean> map = new HashMap<>();
         for (Long followId : followIds) {
+            // 判断关注列表里的ID是否存在于粉丝列表中(相互关注)
+            // key: followId, value: in fans list?
             map.put(followId,fans.contains(followId));
         }
 
-        // 获取头像
-
+        // 获取信息关注/粉丝信息
         final ArrayList<User> users = new ArrayList<>();
         final Map<Long, User> userMap = getBaseInfoUserToMap(map.keySet());
         final List<Long> avatarIds = userMap.values().stream().map(User::getAvatar).collect(Collectors.toList());
@@ -259,10 +261,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private Map<Long,User> getBaseInfoUserToMap(Collection<Long> userIds){
         List<User> users = new ArrayList<>();
         if (!ObjectUtils.isEmpty(userIds)){
-            users = list(new LambdaQueryWrapper<User>().in(User::getId, userIds)
-                    .select(User::getId, User::getNickName, User::getDescription
-                            , User::getSex, User::getAvatar));
+            users = list(new LambdaQueryWrapper<User>()
+                    .in(User::getId, userIds)
+                    .select(User::getId,
+                            User::getNickName,
+                            User::getDescription,
+                            User::getSex,
+                            User::getAvatar));
         }
+        // 将收集到的user的list转化成数据流，然后收集起来再转化成map映射
         return users.stream().collect(Collectors.toMap(User::getId, Function.identity()));
+        // Function.identity()：输入什么，就输出什么
     }
 }

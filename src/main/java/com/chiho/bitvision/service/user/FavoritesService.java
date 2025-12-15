@@ -3,6 +3,8 @@ package com.chiho.bitvision.service.user;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.chiho.bitvision.entity.user.Favorites;
 
+import java.util.List;
+
 /**
  * Favorites 的 Service 接口
  */
@@ -14,4 +16,18 @@ public interface FavoritesService extends IService<Favorites> {
      * @param defaultFavoritesId 默认收藏夹ID
      */
     void exist(Long userId, Long defaultFavoritesId);
+
+    /**
+     * 删除收夹，并将关联的视频数据一并清除
+     * @param id favorites id
+     * @param userId current user id
+     */
+    void remove(Long id, Long userId);
+
+    /**
+     * 获取当前用户所有的收藏夹
+     * @param userId userId
+     * @return list by user's favorites
+     */
+    List<Favorites> listByIds(Long userId);
 }

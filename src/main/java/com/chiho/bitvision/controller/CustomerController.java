@@ -1,6 +1,8 @@
 package com.chiho.bitvision.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.chiho.bitvision.config.QiNiuConfig;
+import com.chiho.bitvision.entity.user.Favorites;
 import com.chiho.bitvision.entity.vo.BasePage;
 import com.chiho.bitvision.entity.vo.UpdateUserVO;
 import com.chiho.bitvision.holder.UserHolder;
@@ -12,6 +14,8 @@ import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 用户个人信息控制器
@@ -104,5 +108,59 @@ public class CustomerController {
     @GetMapping("/fans")
     public R getFans(BasePage basePage, Long userId){
         return R.ok().data(userService.getFans(userId,basePage));
+    }
+
+    /**
+     * 添加/修改收藏夹
+     * @param favorites 收藏夹实体类
+     * @return msg
+     */
+    @PostMapping("/favorites")
+    public R saveOrUpdateFavorites(@RequestBody @Validated Favorites favorites){
+        final Long userId = UserHolder.get();
+        final Long id = favorites.getId();  // 收藏夹ID
+        favorites.setUserId(userId);
+        // 判断收藏夹是否已经存在
+        final int count = (int) favoritesService.count(
+                new LambdaQueryWrapper<Favorites>()
+                .eq(Favorites::getName, favorites.getName())
+                .eq(Favorites::getUserId, userId)
+                .ne(Favorites::getId, favorites.getId()));
+        if (count == 1)
+            return R.error().message("已存在相同名称的收藏夹");
+        favoritesService.saveOrUpdate(favorites);
+        return R.ok().message(id !=null ? "修改成功" : "添加成功");
+    }
+
+    /**
+     * 获取指定收藏夹
+     * @param id 收藏夹id
+     * @return favorite by id
+     */
+    @GetMapping("/favorites/{id}")
+    public R getFavorites(@PathVariable Long id) {
+        return R.ok().data(favoritesService.getById(id));
+    }
+
+    /**
+     * 删除收藏夹
+     * @param id 要删除的收藏夹ID
+     * @return msg
+     */
+    @DeleteMapping("/favorites/{id}")
+    public R deleteFavorites(@PathVariable Long id) {
+        favoritesService.remove(id,UserHolder.get());
+        return R.ok().message("删除成功");
+    }
+
+    /**
+     * 获取所有的收藏夹
+     * @return data
+     */
+    @GetMapping("/favorites")
+    public R listFavorites(){
+        final Long userId = UserHolder.get();
+        List<Favorites> favorites = favoritesService.listByIds(userId);
+        return R.ok().data(favorites);
     }
 }
