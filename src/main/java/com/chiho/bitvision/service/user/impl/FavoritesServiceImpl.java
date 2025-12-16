@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.chiho.bitvision.entity.user.Favorites;
 import com.chiho.bitvision.entity.user.FavoritesVideo;
 import com.chiho.bitvision.exception.BaseException;
+import com.chiho.bitvision.holder.UserHolder;
 import com.chiho.bitvision.mapper.user.FavoritesMapper;
 import com.chiho.bitvision.service.user.FavoritesService;
 import com.chiho.bitvision.service.user.FavoritesVideoService;
@@ -80,5 +81,25 @@ public class FavoritesServiceImpl extends ServiceImpl<FavoritesMapper, Favorites
         }
         // 返回包含视频数量信息的收藏夹列表
         return favorites;
+    }
+
+    // 收藏视频
+    @Override
+    public boolean favorites(Long fId, Long vId) {
+        final Long userId = UserHolder.get();
+        try {
+            final FavoritesVideo favoritesVideo = new FavoritesVideo();
+            favoritesVideo.setFavoritesId(fId);
+            favoritesVideo.setVideoId(vId);
+            favoritesVideo.setUserId(userId);
+            favoritesVideoService.save(favoritesVideo);
+        }catch (Exception e) {
+            favoritesVideoService.remove(new LambdaQueryWrapper<FavoritesVideo>()
+                    .eq(FavoritesVideo::getFavoritesId, fId)
+                    .eq(FavoritesVideo::getVideoId,vId)
+                    .eq(FavoritesVideo::getUserId, userId));
+            return false;
+        }
+        return true;
     }
 }

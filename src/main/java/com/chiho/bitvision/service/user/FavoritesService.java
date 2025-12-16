@@ -30,4 +30,11 @@ public interface FavoritesService extends IService<Favorites> {
      * @return list by user's favorites
      */
     List<Favorites> listByIds(Long userId);
+
+    /**
+     * 收藏视频
+     * @param fId 收藏夹ID
+     * @param vId 视频ID
+     */
+    boolean favorites(Long fId, Long vId);
 }

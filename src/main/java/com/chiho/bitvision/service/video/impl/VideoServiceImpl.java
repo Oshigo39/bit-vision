@@ -1,6 +1,7 @@
 package com.chiho.bitvision.service.video.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -9,9 +10,12 @@ import com.chiho.bitvision.entity.File;
 import com.chiho.bitvision.entity.user.User;
 import com.chiho.bitvision.entity.video.Video;
 import com.chiho.bitvision.entity.vo.BasePage;
+import com.chiho.bitvision.entity.vo.UserModel;
 import com.chiho.bitvision.entity.vo.UserVO;
+import com.chiho.bitvision.exception.BaseException;
 import com.chiho.bitvision.mapper.video.VideoMapper;
 import com.chiho.bitvision.service.FileService;
+import com.chiho.bitvision.service.user.FavoritesService;
 import com.chiho.bitvision.service.user.UserService;
 import com.chiho.bitvision.service.video.VideoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +35,9 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Autowired
     private FileService fileService;
 
+    @Autowired
+    private FavoritesService favoritesService;
+
     // 根据userId获取对应视频,只包含公开的
     @Override
     public IPage<Video> listByUserIdOpenVideo(Long userId, BasePage basePage) {
@@ -47,6 +54,36 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         final List<Video> videos = page.getRecords();
         setUserVoAndUrl(videos);
         return page;
+    }
+
+    @Override
+    public boolean favoritesVideo(Long fId, Long vId) {
+        final Video video = getById(vId);
+        if (video == null)
+            throw new BaseException("指定视频不存在");
+        final boolean favorites = favoritesService.favorites(fId, vId);
+        // 收藏成功则更新计数
+        updateFavorites(video, favorites ? 1L : -1L);
+
+        // todo 修改用户模型，个性推送功能
+//        final List<String> labels = video.buildLabel();
+//        final UserModel userModel = UserModel.buildUserModel(labels,vId,2.0);
+//        interestPushService.updateUserModel(userModel);
+
+        return favorites;
+    }
+
+    // 安全地更新视频的收藏数量
+    public void updateFavorites(Video video, Long value) {
+        // 创建更新包装器
+        final UpdateWrapper<Video> updateWrapper = new UpdateWrapper<>();
+        // 设置更新SQL（更新Video表中的favorites_count字段）
+        updateWrapper.setSql("favorites_count = favorites_count + " + value);
+        // 只更新指定ID的视频记录、乐观锁机制，确保只有当数据库中的收藏数与传入视频对象中的收藏数一致时才执行更新
+        updateWrapper.lambda()
+                .eq(Video::getId, video.getId())
+                .eq(Video::getFavoritesCount, video.getFavoritesCount());
+        update(video,updateWrapper);    // MP的更新操作
     }
 
     // 为视频集合补充完整的关联数据，使其可以直接提供给前端使用
