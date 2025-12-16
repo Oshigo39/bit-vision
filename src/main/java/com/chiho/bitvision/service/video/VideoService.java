@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.chiho.bitvision.entity.video.Video;
 import com.chiho.bitvision.entity.vo.BasePage;
 
+import java.util.Collection;
+
 public interface VideoService extends IService<Video> {
 
     /**
@@ -22,4 +24,11 @@ public interface VideoService extends IService<Video> {
      * @return ?
      */
     boolean favoritesVideo(Long fId, Long vId);
+
+    /**
+     * 根据收藏夹获取视频
+     * @param favoritesId 收藏夹ID
+     * @return 收藏夹下的视频
+     */
+    Collection<Video> listVideoByFavorites(Long favoritesId);
 }

@@ -37,4 +37,12 @@ public interface FavoritesService extends IService<Favorites> {
      * @param vId 视频ID
      */
     boolean favorites(Long fId, Long vId);
+
+    /**
+     * 获取收藏夹下的所有视频的ID
+     * @param favoritesId 收藏夹ID
+     * @param userId userId
+     * @return 视频ID列表
+     */
+    List<Long> listVideoIds(Long favoritesId, Long userId);
 }

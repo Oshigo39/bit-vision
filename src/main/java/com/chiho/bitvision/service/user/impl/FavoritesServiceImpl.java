@@ -102,4 +102,23 @@ public class FavoritesServiceImpl extends ServiceImpl<FavoritesMapper, Favorites
         }
         return true;
     }
+
+    // 获取收藏夹下的视频ID列表
+    @Override
+    public List<Long> listVideoIds(Long favoritesId, Long userId) {
+        // 不直接返回中间表是为了隐私性 (当前没实现收藏夹公开功能)
+        // 校验
+        final Favorites favorites = getOne(new LambdaQueryWrapper<Favorites>()
+                .eq(Favorites::getId,favoritesId)
+                .eq(Favorites::getUserId,userId));
+        if (favorites == null)
+            throw new BaseException("收藏夹为空");
+
+        // 从收藏夹关系表中获取VideoID
+        return favoritesVideoService.list(
+                new LambdaQueryWrapper<FavoritesVideo>()
+                        .eq(FavoritesVideo::getFavoritesId, favoritesId))
+                .stream().map(FavoritesVideo::getVideoId)
+                .collect(Collectors.toList());
+    }
 }

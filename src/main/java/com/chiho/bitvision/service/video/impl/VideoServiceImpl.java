@@ -13,6 +13,7 @@ import com.chiho.bitvision.entity.vo.BasePage;
 import com.chiho.bitvision.entity.vo.UserModel;
 import com.chiho.bitvision.entity.vo.UserVO;
 import com.chiho.bitvision.exception.BaseException;
+import com.chiho.bitvision.holder.UserHolder;
 import com.chiho.bitvision.mapper.video.VideoMapper;
 import com.chiho.bitvision.service.FileService;
 import com.chiho.bitvision.service.user.FavoritesService;
@@ -71,6 +72,17 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 //        interestPushService.updateUserModel(userModel);
 
         return favorites;
+    }
+
+    // 获取收藏夹下的视频
+    @Override
+    public Collection<Video> listVideoByFavorites(Long favoritesId) {
+        final List<Long> videoIds = favoritesService.listVideoIds(favoritesId, UserHolder.get());
+        if (ObjectUtils.isEmpty(videoIds))
+            return Collections.EMPTY_LIST;
+        final Collection<Video> videos = listByIds(videoIds);
+        setUserVoAndUrl(videos);
+        return videos;
     }
 
     // 安全地更新视频的收藏数量
