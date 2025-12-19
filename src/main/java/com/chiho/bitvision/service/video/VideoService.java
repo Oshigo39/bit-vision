@@ -31,4 +31,11 @@ public interface VideoService extends IService<Video> {
      * @return 收藏夹下的视频
      */
     Collection<Video> listVideoByFavorites(Long favoritesId);
+
+    /**
+     * 发布/修改视频接口
+     * 修改无法更改视频源
+     * @param video video
+     */
+    void publishVideo(Video video);
 }

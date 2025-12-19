@@ -18,6 +18,7 @@ public interface FileService extends IService<File> {
     Long save(String fileKey, Long userId);
 
     /**
+     * 七牛云截取帧api生成
      * 根据视频ID生成图片
      * @param fileId F_ID
      * @param userId U_ID

@@ -20,6 +20,12 @@
         <java.version>1.8</java.version>
     </properties>
     <dependencies>
+        <!-- 对url进行解析获取时长 -->
+        <dependency>
+            <groupId>ws.schild</groupId>
+            <artifactId>jave-all-deps</artifactId>
+            <version>3.2.0</version>
+        </dependency>
 <!--        caffeine cache-->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>

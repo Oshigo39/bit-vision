@@ -26,10 +26,12 @@ public class Video extends BaseEntity {
 
     private String description;
 
+    // 视频的网络url
     private Long url;
 
     private Long userId;
 
+    // 视频封面字段
     private Long cover;
 
     /**

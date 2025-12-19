@@ -1,9 +1,12 @@
 package com.chiho.bitvision.controller;
 
+import com.chiho.bitvision.entity.video.Video;
+import com.chiho.bitvision.limit.Limit;
 import com.chiho.bitvision.service.QiNiuFileService;
 import com.chiho.bitvision.service.video.VideoService;
 import com.chiho.bitvision.util.R;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -37,4 +40,17 @@ public class VideoController {
     public R listVideoByFavorites(@PathVariable Long favoritesId) {
         return R.ok().data(videoService.listVideoByFavorites(favoritesId));
     }
+
+    /**
+     * 发布/修改视频
+     * @param video 视频元数据对象
+     * @return msg
+     */
+    @PostMapping
+    @Limit(limit = 5,time = 3600L,msg = "发布视频一小时内不可超过5次")
+    public R publishVideo(@RequestBody @Validated Video video){
+        videoService.publishVideo(video);
+        return R.ok().message("发布成功，请等待审核");
+    }
+
 }

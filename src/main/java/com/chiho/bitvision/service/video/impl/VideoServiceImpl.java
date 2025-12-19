@@ -5,12 +5,14 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.chiho.bitvision.config.LocalCache;
+import com.chiho.bitvision.config.QiNiuConfig;
 import com.chiho.bitvision.constant.AuditStatus;
 import com.chiho.bitvision.entity.File;
 import com.chiho.bitvision.entity.user.User;
+import com.chiho.bitvision.entity.video.Type;
 import com.chiho.bitvision.entity.video.Video;
 import com.chiho.bitvision.entity.vo.BasePage;
-import com.chiho.bitvision.entity.vo.UserModel;
 import com.chiho.bitvision.entity.vo.UserVO;
 import com.chiho.bitvision.exception.BaseException;
 import com.chiho.bitvision.holder.UserHolder;
@@ -18,10 +20,13 @@ import com.chiho.bitvision.mapper.video.VideoMapper;
 import com.chiho.bitvision.service.FileService;
 import com.chiho.bitvision.service.user.FavoritesService;
 import com.chiho.bitvision.service.user.UserService;
+import com.chiho.bitvision.service.video.TypeService;
 import com.chiho.bitvision.service.video.VideoService;
+import com.chiho.bitvision.util.FileUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.function.Function;
@@ -38,6 +43,9 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     @Autowired
     private FavoritesService favoritesService;
+
+    @Autowired
+    private TypeService typeService;
 
     // 根据userId获取对应视频,只包含公开的
     @Override
@@ -83,6 +91,70 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         final Collection<Video> videos = listByIds(videoIds);
         setUserVoAndUrl(videos);
         return videos;
+    }
+
+    @Override
+    public void publishVideo(Video video) {
+        final Long userId = UserHolder.get();
+        Video oldVideo = null;
+        // 不允许修改视频
+        final Long videoId = video.getId();
+        if (videoId != null) {
+            // url不能一致
+            oldVideo = this.getOne(new LambdaQueryWrapper<Video>()
+                    .eq(Video::getId, videoId)
+                    .eq(Video::getUserId, userId));
+            if (!(video.buildVideoUrl()).equals(oldVideo.buildVideoUrl()) || !(video.buildCoverUrl().equals(oldVideo.buildCoverUrl()))) {
+                throw new BaseException("不能更换视频源,只能修改视频信息");
+            }
+        }
+        // 判断对应分类是否存在
+        Type type = typeService.getById(video.getTypeId());
+        if (type == null) {
+            throw new BaseException("分类不存在");
+        }
+        // 校验标签最多不超过5个
+        if (video.buildLabel().size() > 5) {
+            throw new BaseException("标签最多只能选择5个");
+        }
+
+        // 修改状态
+        video.setAuditStatus(AuditStatus.PROCESS);  // 审核中
+        video.setUserId(userId);    // 设置视频所属ID
+
+        boolean isAdd = videoId == null;
+        // 校验
+        video.setYv(null);  // 重置视频唯一标识
+        if (!isAdd) {
+            // 如果是更新已有视频，则不允许更改这些信息
+            video.setVideoType(null);
+            video.setLabelNames(null);
+            video.setUrl(null);
+            video.setCover(null);
+        } else {
+            // 自动生成封面
+            if (ObjectUtils.isEmpty(video.getCover())) {
+                video.setCover(fileService.generatePhoto(video.getUrl(), userId));
+            }
+            // 生成图片的UUID
+            video.setYv("YV" + UUID.randomUUID().toString().replace("-", "").substring(8));
+        }
+
+        if (isAdd || StringUtils.hasLength(oldVideo.getDuration())) {
+            final String uuid = UUID.randomUUID().toString();
+            LocalCache.put(uuid, true);
+            try {
+                Long url = video.getUrl();
+                if (url == null || url == 0) if (oldVideo != null) {
+                    url = oldVideo.getUrl();
+                }
+                final String fileKey = fileService.getById(url).getFileKey();
+                final String duration = FileUtil.getVideoDuration(QiNiuConfig.CNAME + "/" + fileKey + "?uuid=" + uuid);
+                video.setDuration(duration);
+            } finally {
+                LocalCache.rem(uuid);
+            }
+        }
     }
 
     // 安全地更新视频的收藏数量
