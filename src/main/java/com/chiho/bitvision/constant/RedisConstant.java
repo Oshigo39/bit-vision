@@ -16,4 +16,7 @@ public interface RedisConstant {
 
     // 用户粉丝
     String USER_FANS = "user:fans:";
+
+    // 发布视频限流
+    String VIDEO_LIMIT = "video:limit";
 }
