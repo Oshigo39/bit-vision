@@ -9,6 +9,7 @@ import com.chiho.bitvision.config.LocalCache;
 import com.chiho.bitvision.config.QiNiuConfig;
 import com.chiho.bitvision.constant.AuditStatus;
 import com.chiho.bitvision.entity.File;
+import com.chiho.bitvision.entity.task.VideoTask;
 import com.chiho.bitvision.entity.user.User;
 import com.chiho.bitvision.entity.video.Type;
 import com.chiho.bitvision.entity.video.Video;
@@ -18,6 +19,7 @@ import com.chiho.bitvision.exception.BaseException;
 import com.chiho.bitvision.holder.UserHolder;
 import com.chiho.bitvision.mapper.video.VideoMapper;
 import com.chiho.bitvision.service.FileService;
+import com.chiho.bitvision.service.audit.VideoPublishAuditServiceImpl;
 import com.chiho.bitvision.service.user.FavoritesService;
 import com.chiho.bitvision.service.user.UserService;
 import com.chiho.bitvision.service.video.TypeService;
@@ -46,6 +48,9 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     @Autowired
     private TypeService typeService;
+
+    @Autowired
+    private VideoPublishAuditServiceImpl videoPublishAuditService;
 
     // 根据userId获取对应视频,只包含公开的
     @Override
@@ -155,6 +160,15 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
                 LocalCache.rem(uuid);
             }
         }
+        this.saveOrUpdate(video);
+
+        final VideoTask videoTask = new VideoTask();
+        videoTask.setOldVideo(video);
+        videoTask.setVideo(video);
+        videoTask.setIsAdd(isAdd);
+        videoTask.setOldState(isAdd || video.getOpen());
+        videoTask.setNewState(true);
+        videoPublishAuditService.audit(videoTask, false);
     }
 
     // 安全地更新视频的收藏数量

@@ -133,4 +133,71 @@ public class RedisCacheUtil {
         }
         return redisTemplate.opsForValue().increment(key, delta);
     }
+
+    /**
+     * 将数据放入set缓存
+     *
+     * @param key    键
+     * @param values 值 可以是多个
+     * @return 成功个数
+     */
+    public long sSet(String key, Object... values) {
+        try {
+            return redisTemplate.opsForSet().add(key, values);
+        } catch (Exception e) {
+            log.error("缓存放入Redis失败：{}",e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 添加有序集合
+     *
+     * @param key key
+     * @param score score
+     * @param val val
+     * @param time time
+     */
+    public void zadd(String key, double score, Object val, long time) {
+        redisTemplate.opsForZSet().add(key, val, score);
+
+        this.expire(key, time);
+    }
+
+    /**
+     * 指定缓存失效时间
+     *
+     * @param key  键
+     * @param time 时间(秒)
+     * @return ?
+     */
+    public boolean expire(String key, long time) {
+
+        try {
+            if (time > 0) {
+                redisTemplate.expire(key, time, TimeUnit.SECONDS);
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("指定缓存失效时间失败：{}",e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 移除值为value的
+     *
+     * @param key    键
+     * @param values 值 可以是多个
+     * @return 移除的个数
+     */
+    public long setRemove(String key, Object... values) {
+        try {
+            Long count = redisTemplate.opsForSet().remove(key, values);
+            return count;
+        } catch (Exception e) {
+            log.error("移除失败：{}",e.getMessage());
+            return 0;
+        }
+    }
 }
