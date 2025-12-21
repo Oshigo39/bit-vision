@@ -10,6 +10,8 @@ import com.chiho.bitvision.constant.RedisConstant;
 import com.chiho.bitvision.entity.response.AuditResponse;
 import com.chiho.bitvision.entity.user.Favorites;
 import com.chiho.bitvision.entity.user.User;
+import com.chiho.bitvision.entity.user.UserSubscribe;
+import com.chiho.bitvision.entity.video.Type;
 import com.chiho.bitvision.entity.vo.*;
 import com.chiho.bitvision.exception.BaseException;
 import com.chiho.bitvision.holder.UserHolder;
@@ -20,8 +22,11 @@ import com.chiho.bitvision.service.audit.TextAuditService;
 import com.chiho.bitvision.service.user.FavoritesService;
 import com.chiho.bitvision.service.user.FollowService;
 import com.chiho.bitvision.service.user.UserService;
+import com.chiho.bitvision.service.user.UserSubscribeService;
+import com.chiho.bitvision.service.video.TypeService;
 import com.chiho.bitvision.util.DateUtil;
 import com.chiho.bitvision.util.RedisCacheUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +37,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
@@ -54,6 +60,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private ImageAuditService imageAuditService;
+
+    @Autowired
+    private UserSubscribeService userSubscribeService;
+
+    @Autowired
+    private TypeService typeService;
 
     // 注册
     @Override
@@ -81,7 +93,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 (SALT + registerVO.getPassword()).getBytes()
         );
         user.setPassword(encryptPassword);
-        user.setGmtCreated(new Date());
         save(user);
 
         // 创建默认收藏夹并存进数据库
@@ -115,7 +126,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         update(user,new UpdateWrapper<User>()
                 .lambda()
                 .set(User::getPassword,encryptPassword)
-                .set(User::getGmtUpdated,new Date())
                 .eq(User::getEmail,findPWVO.getEmail()));
         return true;
     }
@@ -163,6 +173,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
         }
         if (!Objects.equals(userVO.getAvatar(),oldUser.getAvatar())){
+            // 这里的fileService.getById()会生成and is_deleted = 0; 的sql
             final AuditResponse audit = imageAuditService.audit(fileService.getById(userVO.getAvatar()).getFileKey());
             if (!Objects.equals(audit.getAuditStatus(), AuditStatus.SUCCESS)) {
                 throw new BaseException(audit.getMsg());
@@ -256,6 +267,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         page.setRecords(users);
         page.setTotal(users.size());
         return page;
+    }
+
+    // 获取订阅分类
+    @Override
+    public Collection<Type> listSubscribeType(Long userId) {
+        if (userId == null) {
+            return Collections.EMPTY_SET;
+        }
+        final List<Long> typeIds = userSubscribeService.list(new LambdaQueryWrapper<UserSubscribe>()
+                        .eq(UserSubscribe::getUserId, userId))
+                .stream().map(UserSubscribe::getTypeId).collect(Collectors.toList());
+
+        if (ObjectUtils.isEmpty(typeIds)) return Collections.EMPTY_LIST;
+
+        return typeService.list(new LambdaQueryWrapper<Type>()
+                .in(Type::getId, typeIds).select(Type::getId, Type::getName, Type::getIcon));
     }
 
     private Map<Long,User> getBaseInfoUserToMap(Collection<Long> userIds){

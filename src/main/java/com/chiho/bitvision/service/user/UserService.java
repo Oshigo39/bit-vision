@@ -3,10 +3,12 @@ package com.chiho.bitvision.service.user;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.chiho.bitvision.entity.user.User;
+import com.chiho.bitvision.entity.video.Type;
 import com.chiho.bitvision.entity.vo.*;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 public interface UserService extends IService<User> {
     /**
@@ -70,4 +72,11 @@ public interface UserService extends IService<User> {
      * @return data
      */
     Page<User> getFans(Long userId, BasePage basePage);
+
+    /**
+     * 获取订阅分类
+     * @param userId u
+     * @return c
+     */
+    Collection<Type> listSubscribeType(Long userId);
 }
