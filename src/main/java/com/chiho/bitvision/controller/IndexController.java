@@ -9,10 +9,7 @@ import com.chiho.bitvision.service.video.VideoService;
 import com.chiho.bitvision.util.JwtUtils;
 import com.chiho.bitvision.util.R;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -64,5 +61,16 @@ public class IndexController {
             type.setUsed(set.contains(type.getId()));   // 判断元素是否存在
         }
         return R.ok().data(types);
+    }
+
+    /**
+     * 根据id获取视频详情
+     * @param id id
+     * @return data of video
+     */
+    @GetMapping("/video/{id}")
+    public R getVideoById(@PathVariable Long id, HttpServletRequest request){
+        final Long userId = JwtUtils.getUserId(request);
+        return R.ok().data(videoService.getVideoById(id,userId));
     }
 }

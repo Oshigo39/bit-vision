@@ -45,4 +45,12 @@ public interface FavoritesService extends IService<Favorites> {
      * @return 视频ID列表
      */
     List<Long> listVideoIds(Long favoritesId, Long userId);
+
+    /**
+     * 收藏状态
+     * @param videoId 当前videoId
+     * @param userId 当前userId
+     * @return ?
+     */
+    Boolean favoritesState(Long videoId, Long userId);
 }

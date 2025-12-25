@@ -21,9 +21,11 @@ import com.chiho.bitvision.mapper.video.VideoMapper;
 import com.chiho.bitvision.service.FileService;
 import com.chiho.bitvision.service.audit.VideoPublishAuditServiceImpl;
 import com.chiho.bitvision.service.user.FavoritesService;
+import com.chiho.bitvision.service.user.FollowService;
 import com.chiho.bitvision.service.user.UserService;
 import com.chiho.bitvision.service.video.TypeService;
 import com.chiho.bitvision.service.video.VideoService;
+import com.chiho.bitvision.service.video.VideoStarService;
 import com.chiho.bitvision.util.FileUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,6 +50,12 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     @Autowired
     private TypeService typeService;
+
+    @Autowired
+    private VideoStarService videoStarService;
+
+    @Autowired
+    private FollowService followService;
 
     @Autowired
     private VideoPublishAuditServiceImpl videoPublishAuditService;
@@ -169,6 +177,23 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         videoTask.setOldState(isAdd || video.getOpen());
         videoTask.setNewState(true);
         videoPublishAuditService.audit(videoTask, false);
+    }
+
+    // 根据视频ID获取视频信息
+    @Override
+    public Video getVideoById(Long videoId, Long userId) {
+        final Video video = this.getOne(new LambdaQueryWrapper<Video>().eq(Video::getId, videoId)); // 视频表格比对id获取记录
+        if (video == null) throw new BaseException("指定视频不存在");
+        // 私密则返回为空视频
+        if (video.getOpen()) return new Video();
+        setUserVoAndUrl(Collections.singleton(video));
+        // 当前视频用户自己是否有收藏/点赞过等信息
+        // 这里需要优化 如果这里开线程获取则系统g了(因为这里的场景不适合) -> 请求数很多
+        // 正确做法: 视频存储在redis中，点赞收藏等行为异步放入DB, 定时任务扫描DB中不重要更新redis
+        video.setStart(videoStarService.starState(videoId, userId));
+        video.setFavorites(favoritesService.favoritesState(videoId, userId));
+        video.setFollow(followService.isFollows(video.getUserId(), userId));
+        return video;
     }
 
     // 安全地更新视频的收藏数量

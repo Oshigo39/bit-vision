@@ -38,4 +38,12 @@ public interface VideoService extends IService<Video> {
      * @param video video
      */
     void publishVideo(Video video);
+
+    /**
+     * 获取视频信息
+     * @param id 视频id
+     * @param userId 当前用户id
+     * @return data of video
+     */
+    Video getVideoById(Long id,Long userId);
 }
